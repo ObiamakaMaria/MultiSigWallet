@@ -19,8 +19,8 @@ describe("MultiSigWallet", function () {
       throw new Error("Not enough signers available. At least 21 signers are required.");
     }
     boardMembers = signers.slice(0, 20); // Take signers 1 to 20
-    nonBoardMember = signers[21];
-    console.log(nonBoardMember) // Use signer 21 as a non-board member
+    nonBoardMember = ethers.Wallet.createRandom();
+    // console.log(nonBoardMember) // Use signer 21 as a non-board member
 
     // Deploy the contract
     const MultiSigWalletFactory = await ethers.getContractFactory("MultiSigWallet");
@@ -56,8 +56,8 @@ describe("MultiSigWallet", function () {
     await multiSigWallet.deposit({value:amount})
     await multiSigWallet.connect(boardMembers[0]).proposeExpense(amount, boardMembers[1].address);
     await multiSigWallet.connect(boardMembers[0]).approveExpense(0);
-    const expense = await multiSigWallet.expenses(0);
-    expect(expense.approvals[boardMembers[0].address]).to.be.true;
+    const expense = await multiSigWallet.getApprovals(0);
+    expect(expense).to.be.true;
   });
 
   it("Should not allow non-board members to approve an expense", async function () {
@@ -70,6 +70,8 @@ describe("MultiSigWallet", function () {
   });
 
   it("Should release funds when fully approved", async function () {
+    const amount = ethers.parseEther("100");
+    await multiSigWallet.deposit({value:amount})
     await multiSigWallet.connect(boardMembers[0]).proposeExpense(100, boardMembers[1].address);
     for (let i = 0; i < 20; i++) {
       await multiSigWallet.connect(boardMembers[i]).approveExpense(0);
@@ -80,6 +82,8 @@ describe("MultiSigWallet", function () {
   });
 
   it("Should not release funds if not fully approved", async function () {
+    const amount = ethers.parseEther("100");
+    await multiSigWallet.deposit({value:amount})
     await multiSigWallet.connect(boardMembers[0]).proposeExpense(100, boardMembers[1].address);
     await expect(
       multiSigWallet.connect(boardMembers[0]).releaseFunds(0)

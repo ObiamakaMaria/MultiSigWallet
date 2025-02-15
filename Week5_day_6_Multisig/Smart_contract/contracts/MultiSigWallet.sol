@@ -76,5 +76,11 @@ contract MultiSigWallet {
         return boardMembers;
     }
 
+    function getApprovals(uint256 _expenseId) public view returns(bool) {
+        return expenses[_expenseId].approvals[msg.sender];
+         
+    }
+
+
     
 }
